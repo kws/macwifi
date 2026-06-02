@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import CoreWLAN
 
 struct TestFailure: Error, CustomStringConvertible {
     let message: String
@@ -107,6 +108,27 @@ func testParseBSSIDRejectsMissingInvalidOrShortValues() throws {
     try expectEqual(parseBSSID("01:23:45:67:89:xx"), Data(), "invalid BSSID should parse as empty data")
 }
 
+func testMapWidthUsesCoreWLANRawValues() throws {
+    let cases: [(Int, UInt16)] = [
+        (0, 0),
+        (1, 20),
+        (2, 40),
+        (3, 80),
+        (4, 160),
+    ]
+
+    for (rawValue, expectedWidth) in cases {
+        guard let width = CWChannelWidth(rawValue: rawValue) else {
+            throw TestFailure(message: "CWChannelWidth(rawValue: \(rawValue)) should exist")
+        }
+        try expectEqual(
+            mapWidth(width),
+            expectedWidth,
+            "mapWidth should convert CoreWLAN raw value \(rawValue)"
+        )
+    }
+}
+
 func testEncodePasswordResponseMatchesWireFormat() throws {
     let response = encodePasswordResponse(password: "secret", error: "denied")
 
@@ -180,6 +202,7 @@ struct WifiScannerTestRunner {
             ("writeAll writes full payloads", testWriteAllWritesFullPayload),
             ("parseBSSID accepts valid hex octets", testParseBSSIDAcceptsHexOctets),
             ("parseBSSID rejects invalid values", testParseBSSIDRejectsMissingInvalidOrShortValues),
+            ("mapWidth uses CoreWLAN raw values", testMapWidthUsesCoreWLANRawValues),
             ("encodePasswordResponse matches wire format", testEncodePasswordResponseMatchesWireFormat),
             ("encodeScanResponse matches wire format", testEncodeScanResponseMatchesWireFormat),
         ]
