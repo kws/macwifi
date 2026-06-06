@@ -138,7 +138,14 @@ func mapBand(_ b: CWChannelBand) -> UInt8 {
     switch b.rawValue { case 1: return 1; case 2: return 2; case 3: return 3; default: return 0 }
 }
 func mapWidth(_ w: CWChannelWidth) -> UInt16 {
-    switch w.rawValue { case 1: return 20; case 2: return 40; case 3: return 80; case 4: return 160; default: return 0 }
+    switch w {
+    case .widthUnknown: return 0
+    case .width20MHz: return 20
+    case .width40MHz: return 40
+    case .width80MHz: return 80
+    case .width160MHz: return 160
+    @unknown default: return 0
+    }
 }
 func detectSecurity(_ n: CWNetwork) -> UInt8 {
     let probes: [(CWSecurity, UInt8)] = [

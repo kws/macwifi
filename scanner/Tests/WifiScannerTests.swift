@@ -108,23 +108,20 @@ func testParseBSSIDRejectsMissingInvalidOrShortValues() throws {
     try expectEqual(parseBSSID("01:23:45:67:89:xx"), Data(), "invalid BSSID should parse as empty data")
 }
 
-func testMapWidthUsesCoreWLANRawValues() throws {
-    let cases: [(Int, UInt16)] = [
-        (0, 0),
-        (1, 20),
-        (2, 40),
-        (3, 80),
-        (4, 160),
+func testMapWidthUsesCoreWLANChannelWidthConstants() throws {
+    let cases: [(CWChannelWidth, UInt16, String)] = [
+        (.widthUnknown, 0, "unknown"),
+        (.width20MHz, 20, "20 MHz"),
+        (.width40MHz, 40, "40 MHz"),
+        (.width80MHz, 80, "80 MHz"),
+        (.width160MHz, 160, "160 MHz"),
     ]
 
-    for (rawValue, expectedWidth) in cases {
-        guard let width = CWChannelWidth(rawValue: rawValue) else {
-            throw TestFailure(message: "CWChannelWidth(rawValue: \(rawValue)) should exist")
-        }
+    for (width, expectedWidth, name) in cases {
         try expectEqual(
             mapWidth(width),
             expectedWidth,
-            "mapWidth should convert CoreWLAN raw value \(rawValue)"
+            "mapWidth should convert CoreWLAN \(name) channel width"
         )
     }
 }
@@ -202,7 +199,7 @@ struct WifiScannerTestRunner {
             ("writeAll writes full payloads", testWriteAllWritesFullPayload),
             ("parseBSSID accepts valid hex octets", testParseBSSIDAcceptsHexOctets),
             ("parseBSSID rejects invalid values", testParseBSSIDRejectsMissingInvalidOrShortValues),
-            ("mapWidth uses CoreWLAN raw values", testMapWidthUsesCoreWLANRawValues),
+            ("mapWidth uses CoreWLAN channel width constants", testMapWidthUsesCoreWLANChannelWidthConstants),
             ("encodePasswordResponse matches wire format", testEncodePasswordResponseMatchesWireFormat),
             ("encodeScanResponse matches wire format", testEncodeScanResponseMatchesWireFormat),
         ]
