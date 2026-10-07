@@ -5,7 +5,7 @@ security and privacy reports are especially important.
 
 ## Supported Versions
 
-Security fixes are handled on the latest released version of the module.
+Security fixes are handled on the latest version of the Swift CLI.
 
 ## Reporting A Vulnerability
 
@@ -21,9 +21,9 @@ Please include:
 - A short description of the vulnerability.
 - Impact and affected versions, if known.
 - Reproduction steps or proof-of-concept details.
-- Any relevant macOS and Go versions.
+- Any relevant macOS and Swift versions.
 - Whether the issue involves scan data, Location Services, Keychain access, the
-  embedded helper, or release signing.
+  app bundle, or release signing.
 
 ## Security Boundaries
 

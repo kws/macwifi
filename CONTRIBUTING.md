@@ -1,89 +1,39 @@
-# Contributing to macwifi
+# Contributing to MacWiFi
 
-Thanks for helping improve `macwifi`. This project is focused on making macOS
-WiFi discovery practical from Go while respecting macOS privacy controls.
+This fork provides a Swift-only macOS Wi-Fi command. Keep changes focused on
+the CLI, scan metadata, survey output and platform compatibility.
 
-## Good Contributions
+## Validation
 
-The most useful contributions are:
+Run `make check` before opening a pull request. It builds and signs the app,
+runs the standalone Swift regression suite including app launch, verifies
+the bundle and checks help/version.
 
-- Compatibility reports across macOS versions and Apple Silicon hardware.
-- Fixes for incorrect WiFi metadata mapping.
-- Better examples for diagnostics, inventory, support, security, or TUI use
-  cases.
-- Clear bug reports with reproduction steps.
-- Documentation improvements that make first-time usage easier.
+The automated suite does not request Location Services or access Keychain.
+For a scanner or permission change, also check:
 
-Please do not submit changes that try to bypass Location Services, Keychain
-consent, or other macOS user-approval flows.
+~~~sh
+./dist/macwifi-cli scan
+./dist/macwifi-cli scan --bssids --json
+./dist/macwifi-cli info --bssids
+~~~
 
-## Before Opening An Issue
+Check password retrieval only with your own explicitly selected test network.
+Describe which dialogs and denied-permission cases were tested. Use a stable
+code-signing identity when checking persistent authorization across builds.
 
-Check whether the behavior is already documented in the README, especially:
+## Compatibility
 
-- The first scan may require Location Services approval.
-- Password reads may trigger a Keychain prompt every time.
-- Saved networks that are not currently visible may have zero signal/channel
-  fields.
-- The embedded helper currently targets Apple Silicon.
+Default scans keep strongest-per-SSID selection, saved-network placeholders,
+the existing C/S flags and the original JSON field names. Detailed BSSID scans
+are opt-in. Add regression coverage for changes to selection, command parsing,
+output contracts or the LaunchServices flow.
 
-If the issue still looks valid, include:
+The package targets macOS 13. Avoid requiring full Xcode or external packages
+when Command Line Tools can provide the same functionality.
 
-- macOS version.
-- Mac model and architecture.
-- Go version.
-- The command or code snippet you ran.
-- Expected behavior.
-- Actual behavior and full error output.
+## Reports
 
-Do not include real WiFi passwords, private SSIDs, internal BSSIDs, or other
-sensitive network details unless you have intentionally anonymized them.
-
-## Development Setup
-
-Run the Go tests:
-
-```sh
-make ci-go
-```
-
-Run the scanner example:
-
-```sh
-go run ./examples/scan
-go run ./examples/scan --password MyHomeWiFi
-```
-
-If you are editing the Swift helper:
-
-```sh
-make scanner
-MACWIFI_APP=$PWD/WifiScanner.app go run ./examples/scan
-```
-
-`MACWIFI_APP` points the Go package at your local helper instead of the embedded
-release helper.
-
-## Pull Requests
-
-Before opening a PR:
-
-- Keep the change focused.
-- Run `make ci-go`.
-- Update docs or examples when behavior changes.
-- Mention whether you tested the Location Services prompt, Keychain prompt, or
-  both.
-- If you changed `scanner/Sources/main.swift`, test with `make scanner` and
-  `MACWIFI_APP=$PWD/WifiScanner.app go run ./examples/scan`.
-
-Changes to the embedded helper need maintainer approval. Pushes to `main` that
-touch the helper run the signed companion workflow, which signs, notarizes,
-staples, and opens a generated PR for `embedded/WifiScanner.app`.
-
-## Release Notes
-
-If your change affects users, include a short note in the PR description:
-
-- What changed.
-- Who is affected.
-- Whether permissions, prompts, or supported macOS versions changed.
+Include the CLI commit/version, macOS version, architecture, Swift version
+when building, command and relevant error output. Anonymize network identifiers
+and never include real Wi-Fi passwords. macOS consent remains under user control.

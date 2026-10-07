@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — Swift CLI
+
+- Replace the Go frontend and adapter with a native Swift CLI and app bundle.
+- Preserve default SSID summaries and the existing CLI JSON fields.
+- Add opt-in BSSID scans with exact connection matching and hidden results.
+- Retain the CoreWLAN channel-width fix from upstream PR #32.
+- Add Command Line Tools-compatible tests and Swift-only CI.
+
+Historical entries below describe the original upstream Go library.
+
 ## [1.0.0](https://github.com/jaisonerick/macwifi/compare/v0.1.4...v1.0.0) (2026-04-22)
 
 

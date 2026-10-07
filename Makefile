@@ -1,95 +1,24 @@
-.PHONY: ci ci-go ci-macos fmt fmt-check mod-tidy mod-tidy-check vet build test test-race swift-check swift-test scanner scanner-ci release verify-embedded-helper example clean
+.PHONY: build test check ci clean
 
-APP := WifiScanner.app
-GO ?= go
+SWIFT ?= swift
+SIGN_IDENTITY ?= -
 SWIFTC ?= swiftc
-# Pin to match scanner/Info.plist LSMinimumSystemVersion and the shipped
-# helper target in scripts/build-wifi-scanner-app.sh.
-SWIFT_TARGET ?= arm64-apple-macos13.0
-GO_FILES := $(shell find . -name '*.go' -not -path './.git/*')
-SWIFT_FILES := $(shell find scanner/Sources -name '*.swift' -type f | sort)
-SWIFT_LIBRARY_FILES := $(shell find scanner/Sources -name '*.swift' -type f -not -name 'main.swift' | sort)
-SWIFT_TEST_FILES := $(shell find scanner/Tests -name '*.swift' -type f | sort)
-
-ci: ci-go
-
-ci-go: fmt-check mod-tidy-check vet test-race build
-
-ci-macos: ci-go swift-check swift-test scanner-ci
-
-fmt:
-	gofmt -w $(GO_FILES)
-
-fmt-check:
-	@files="$$(gofmt -l $(GO_FILES))"; \
-	if [ -n "$$files" ]; then \
-		printf '%s\n' "$$files"; \
-		exit 1; \
-	fi
-
-mod-tidy:
-	$(GO) mod tidy
-
-mod-tidy-check:
-	$(GO) mod tidy
-	git diff --exit-code -- go.mod go.sum
-
-vet:
-	$(GO) vet ./...
 
 build:
-	$(GO) build ./...
+	SWIFT="$(SWIFT)" SIGN_IDENTITY="$(SIGN_IDENTITY)" ./scripts/build-app.sh
 
 test:
-	$(GO) test ./...
+	SWIFTC="$(SWIFTC)" ./scripts/test.sh
 
-test-race:
-	$(GO) test -race ./...
+# Includes an app round trip without requesting Location Services or Keychain access.
+check: build
+	MACWIFI_TEST_APP="$(CURDIR)/dist/MacWiFi.app" SWIFTC="$(SWIFTC)" ./scripts/test.sh
+	plutil -lint packaging/Info.plist packaging/entitlements.plist
+	codesign --verify --deep --strict dist/MacWiFi.app
+	./dist/macwifi-cli version
+	./dist/macwifi-cli help >/dev/null
 
-swift-check:
-	$(SWIFTC) -typecheck \
-		-target $(SWIFT_TARGET) \
-		-framework CoreWLAN \
-		-framework CoreLocation \
-		-framework Security \
-		$(SWIFT_FILES)
-
-swift-test:
-	@set -e; \
-	tmp="$$(mktemp -d)"; \
-	trap 'rm -rf "$$tmp"' EXIT; \
-	$(SWIFTC) -D TESTING -parse-as-library -Onone \
-		-target $(SWIFT_TARGET) \
-		-framework CoreWLAN \
-		-framework CoreLocation \
-		-framework Security \
-		-o "$$tmp/WifiScannerTests" \
-		$(SWIFT_LIBRARY_FILES) \
-		$(SWIFT_TEST_FILES); \
-	"$$tmp/WifiScannerTests"
-
-# Local build: compile + sign with whatever cert is available.
-# Output stays at the repo root, used via $MACWIFI_APP for dev iteration.
-scanner: $(APP)
-
-$(APP): $(SWIFT_FILES) scanner/Info.plist scanner/entitlements.plist scripts/build-wifi-scanner-app.sh scripts/wifi-scanner-source-digest.sh
-	"$(CURDIR)/scripts/build-wifi-scanner-app.sh" --repo-root "$(CURDIR)" --bundle "$(CURDIR)/$(APP)"
-
-scanner-ci:
-	rm -rf $(APP)
-	SIGN_IDENTITY=- $(MAKE) scanner
-
-# Release build: sign with Developer ID, notarize, staple, stage for embed.
-# Run this before cutting a new version of the Go module.
-#   Prereqs (one-time): `xcrun notarytool store-credentials macwifi-notary ...`
-release:
-	"$(CURDIR)/scripts/release-wifi-scanner-app.sh" --repo-root "$(CURDIR)"
-
-verify-embedded-helper:
-	"$(CURDIR)/scripts/verify-wifi-scanner-app.sh" --repo-root "$(CURDIR)"
-
-example: scanner
-	MACWIFI_APP=$(PWD)/$(APP) go run ./examples/scan
+ci: check
 
 clean:
-	rm -rf $(APP)
+	rm -rf .build dist

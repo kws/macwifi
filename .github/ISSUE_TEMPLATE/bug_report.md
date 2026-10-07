@@ -17,7 +17,7 @@ Describe what you expected to happen.
 Provide the smallest command or code snippet that reproduces the issue.
 
 ```sh
-go run ./examples/scan
+./dist/macwifi-cli scan
 ```
 
 ## Environment
@@ -25,7 +25,7 @@ go run ./examples/scan
 - macOS version:
 - Mac model:
 - Architecture: Apple Silicon / Intel
-- Go version:
+- Swift version:
 - macwifi version or commit:
 
 ## Permissions
